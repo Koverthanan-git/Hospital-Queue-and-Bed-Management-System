@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Queue System</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            text-align: center;
+        }
+        .container {
+            width: 60%;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px 0px gray;
+        }
+        input, button {
+            margin: 10px;
+            padding: 8px;
+            width: 80%;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            cursor: pointer;
+            background-color: #28a745;
+            color: white;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+    <script>
+        function addPatient() {
+            let name = $("#name").val();
+            let condition = $("#condition").val();
+            $.post("/add_patient", { name, condition }, function(data) {
+                alert(data.message);
+                loadStatus();
+            });
+        }
+
+        function assignBed() {
+            $.post("/assign_bed", function(data) {
+                alert(data.message);
+                loadStatus();
+            });
+        }
+
+        function releaseBed() {
+            let name = $("#release_name").val();
+            $.post("/release_bed", { name }, function(data) {
+                alert(data.message);
+                loadStatus();
+            });
+        }
+
+        function loadStatus() {
+            $.get("/status", function(data) {
+                let queueHtml = data.queue.length ? data.queue.map(p => `<tr><td>${p.name}</td><td>${p.condition}</td></tr>`).join("") : "<tr><td colspan='2'>No patients in queue</td></tr>";
+                $("#queue-table tbody").html(queueHtml);
+
+                let bedsHtml = data.beds.map(bed => `<tr><td>${bed.bed_id}</td><td>${bed.occupied ? "Occupied" : "Available"}</td></tr>`).join("");
+                $("#beds-table tbody").html(bedsHtml);
+
+                let patientsHtml = data.patients.map(p => `<tr><td>${p.name}</td><td>${p.condition}</td><td>${p.bed ? p.bed : "Waiting"}</td></tr>`).join("");
+                $("#patients-table tbody").html(patientsHtml);
+                $.get("/status", function(data) {
+    let doctorsHtml = data.doctors.map(doc => `<tr><td>${doc.name}</td><td>${doc.available ? "Available" : "Busy"}</td></tr>`).join("");
+    $("#doctors-table tbody").html(doctorsHtml);
+
+    let patientsHtml = data.patients.map(p => 
+        `<tr><td>${p.name}</td><td>${p.condition}</td><td>${p.bed ? p.bed : "Waiting"}</td><td>${p.doctor}</td></tr>`
+    ).join("");
+    $("#patients-table tbody").html(patientsHtml);
+});d
+});
+        }
+
+        $(document).ready(function() {
+            loadStatus();
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Hospital Queue System</h2>
+
+        <h3>Add Patient</h3>
+        <input type="text" id="name" placeholder="Patient Name">
+        <input type="text" id="condition" placeholder="Condition">
+        <button onclick="addPatient()">Add to OPD</button>
+
+        <h3>Assign Bed</h3>
+        <button onclick="assignBed()">Assign Next Patient to Bed</button>
+
+        <h3>Release Bed</h3>
+        <input type="text" id="release_name" placeholder="Patient Name">
+        <button onclick="releaseBed()">Release Bed</button>
+
+        <h3>OPD Queue</h3>
+        <table id="queue-table">
+            <thead>
+                <tr><th>Patient Name</th><th>Condition</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h3>Bed Availability</h3>
+        <table id="beds-table">
+            <thead>
+                <tr><th>Bed ID</th><th>Status</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h3>Patients and Bed Assignments</h3>
+        <table id="patients-table">
+            <thead>
+                <tr><th>Patient Name</th><th>Condition</th><th>Bed Assigned</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</body>
+</html>
